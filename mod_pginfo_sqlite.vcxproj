@@ -78,7 +78,7 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClCompile Include="mod_pginfo_sqlite.cpp" />
+    <ClCompile Include="mod_pginfo_sqlite.c" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="modules_def.h" />
