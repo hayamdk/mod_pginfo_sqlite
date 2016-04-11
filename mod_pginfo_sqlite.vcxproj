@@ -81,7 +81,9 @@
     <ClCompile Include="mod_pginfo_sqlite.c" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="modules_def.h" />
+    <ClInclude Include="module_def.h" />
+    <ClInclude Include="ts_proginfo.h" />
+    <ClInclude Include="module_hooks.h" />
     <ClInclude Include="sqlite3.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
