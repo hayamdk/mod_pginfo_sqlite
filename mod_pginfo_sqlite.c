@@ -51,7 +51,7 @@ static void *hook_pgoutput_create(const WCHAR *fname, const proginfo_t *pi, cons
 }
 
 /* 既存のレコードが存在するかどうか確認 */
-static int db_search(sqlite3 *dbh, const proginfo_t *pi)
+static int db_search(sqlite3 *dbh, const proginfo_t *pi, int64_t *rec_id)
 {
 	sqlite3_stmt *stmt = NULL;
 	time_mjd_t start_min, start_max;
@@ -60,52 +60,53 @@ static int db_search(sqlite3 *dbh, const proginfo_t *pi)
 	offset_day.day = 1;
 
 	int ret;
+	int retval = 0;
 	const char str[] = "SELECT * FROM programs WHERE service_id = ? AND event_id = ? AND start > ? AND start < ?";
-	ret = sqlite3_prepare_v2(dbh, str, sizeof(str)+1, &stmt, NULL);
-	if (ret != SQLITE_OK) {
+
+	if (sqlite3_prepare_v2(dbh, str, sizeof(str) + 1, &stmt, NULL) != SQLITE_OK) {
 		output_message(MSG_ERROR, L"sqlite3_prepare_v2(): %s\n", sqlite3_errmsg16(dbh));
-		return 0;
+		goto END;
 	}
-	ret = sqlite3_bind_int(stmt, 1, pi->service_id);
-	if (ret != SQLITE_OK) {
+	if (sqlite3_bind_int(stmt, 1, pi->service_id) != SQLITE_OK) {
 		output_message(MSG_ERROR, L"sqlite3_bind_int(): %s\n", sqlite3_errmsg16(dbh));
 		sqlite3_finalize(stmt);
-		return 0;
+		goto END;
 	}
-	ret = sqlite3_bind_int(stmt, 2, pi->event_id);
-	if (ret != SQLITE_OK) {
+	if (sqlite3_bind_int(stmt, 2, pi->event_id) != SQLITE_OK) {
 		output_message(MSG_ERROR, L"sqlite3_bind_text16(): %s\n", sqlite3_errmsg16(dbh));
 		sqlite3_finalize(stmt);
-		return 0;
+		goto END;
 	}
 
 	/* 検索範囲はstartの前後1日 */
 	time_add_offset(&start_max, &pi->start, &offset_day);
 	offset_day.sign = -1;
 	time_add_offset(&start_min, &pi->start, &offset_day);
-	ret = sqlite3_bind_int64(stmt, 3, timenum14(&start_min));
-	if (ret != SQLITE_OK) {
+
+	if (sqlite3_bind_int64(stmt, 3, timenum14(&start_min)) != SQLITE_OK) {
 		output_message(MSG_ERROR, L"sqlite3_bind_int64(): %s\n", sqlite3_errmsg16(dbh));
 		sqlite3_finalize(stmt);
-		return 0;
+		goto END;
 	}
-	ret = sqlite3_bind_int64(stmt, 4, timenum14(&start_max));
-	if (ret != SQLITE_OK) {
+	if (sqlite3_bind_int64(stmt, 4, timenum14(&start_max)) != SQLITE_OK) {
 		output_message(MSG_ERROR, L"sqlite3_bind_int64(): %s\n", sqlite3_errmsg16(dbh));
 		sqlite3_finalize(stmt);
-		return 0;
+		goto END;
 	}
 
 	ret = sqlite3_step(stmt);
 	if (ret == SQLITE_ROW) {
-		sqlite3_finalize(stmt);
-		return 2;
+		*rec_id = sqlite3_column_int64(stmt, 0);
+		retval = 2;
 	} else if (ret == SQLITE_DONE) {
-		sqlite3_finalize(stmt);
-		return 1;
+		retval = 1;
 	}
-	sqlite3_finalize(stmt);
-	return 0;
+END:
+	if (sqlite3_finalize(stmt) != SQLITE_OK) {
+		output_message(MSG_ERROR, L"sqlite3_finalize(): %s\n", sqlite3_errmsg16(dbh));
+		retval = 0;
+	}
+	return retval;
 }
 
 static void str_concat(WCHAR *dst_base, int *dst_used, int dst_max, const WCHAR *str)
@@ -141,11 +142,12 @@ static uint16_t ntoh16(const uint16_t n)
 	return h;
 }
 
-static int db_insert(sqlite3 *dbh, const WCHAR *ts_path, const proginfo_t *pi)
+static int db_insert(sqlite3 *dbh, const WCHAR *ts_path, const proginfo_t *pi, int replace, int64_t id)
 {
 	sqlite3_stmt *stmt = NULL;
 	int retval = 0;
 	WCHAR ts_fname[MAX_PATH_LEN + 1];
+	const char *str_sql;
 
 	uint8_t genre_raw[15] = { 0 };
 	WCHAR *genre1, *genre2, genre_str[2048];
@@ -160,9 +162,15 @@ static int db_insert(sqlite3 *dbh, const WCHAR *ts_path, const proginfo_t *pi)
 
 	int i;
 
-	const char str_sql[] = "INSERT INTO programs( nid, tsid, service_id, service_name, service_name_raw, event_id, program_name, program_name_raw,"
-		" start, duration, genre, genre_raw, program_text, program_text_raw, program_detail, program_detail_raw, record_filename ) "
-		"values(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)";
+	if (replace) {
+		str_sql = "REPLACE INTO programs( nid, tsid, service_id, service_name, service_name_raw, event_id, program_name, program_name_raw,"
+			" start, duration, genre, genre_raw, program_text, program_text_raw, program_detail, program_detail_raw, record_filename, id ) "
+			"values(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)";
+	} else {
+		str_sql = "INSERT INTO programs( nid, tsid, service_id, service_name, service_name_raw, event_id, program_name, program_name_raw,"
+			" start, duration, genre, genre_raw, program_text, program_text_raw, program_detail, program_detail_raw, record_filename ) "
+			"values(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)";
+	}
 
 	/* ジャンル情報 */
 	genre_raw[0] = pi->genre_info.n_items;
@@ -212,7 +220,7 @@ static int db_insert(sqlite3 *dbh, const WCHAR *ts_path, const proginfo_t *pi)
 	wcsncpy(ts_fname, ts_path, MAX_PATH_LEN);
 	PathStripPath(ts_fname);
 
-	if( sqlite3_prepare_v2(dbh, str_sql, sizeof(str_sql) + 1, &stmt, NULL) != SQLITE_OK ) {
+	if( sqlite3_prepare_v2(dbh, str_sql, strlen(str_sql), &stmt, NULL) != SQLITE_OK ) {
 		output_message(MSG_ERROR, L"sqlite3_prepare_v2(): %s\n", sqlite3_errmsg16(dbh));
 		return 0;
 	}
@@ -286,6 +294,13 @@ static int db_insert(sqlite3 *dbh, const WCHAR *ts_path, const proginfo_t *pi)
 		goto END;
 	}
 
+	if (replace) {
+		if (sqlite3_bind_int64(stmt, 18, id) != SQLITE_OK) {
+			output_message(MSG_ERROR, L"sqlite3_bind_int64(): %s\n", sqlite3_errmsg16(dbh));
+			goto END;
+		}
+	}
+
 	if( sqlite3_step(stmt) != SQLITE_DONE ) {
 		output_message(MSG_ERROR, L"sqlite3_step(): %s\n", sqlite3_errmsg16(dbh));
 		goto END;
@@ -305,6 +320,7 @@ static void hook_pgoutput_close(void *ps, const proginfo_t* pi)
 	mod_stat_t *pstat = (mod_stat_t*)ps;
 	sqlite3 *dbh = NULL;
 	int ret, commit_ok = 0;
+	int64_t record_id;
 
 	if (!pstat) {
 		return;
@@ -333,19 +349,23 @@ static void hook_pgoutput_close(void *ps, const proginfo_t* pi)
 		output_message(MSG_ERROR, L"sqliteのトランザクション開始に失敗しました\n");
 		goto END2;
 	}
-	ret = db_search(dbh, pi);
+	ret = db_search(dbh, pi, &record_id);
 	if (ret == 0) {
 		output_message(MSG_ERROR, L"sqliteデータベースの検索に失敗しました\n");
 		goto END1;
 	} else if (ret == 1) {
-		ret = db_insert(dbh, pstat->fn_ts, pi);
+		ret = db_insert(dbh, pstat->fn_ts, pi, 0, 0);
 		if (!ret) {
 			output_message(MSG_ERROR, L"sqliteデータベースの追加に失敗しました\n");
 			goto END1;
 		}
 	} else {
-		output_message(MSG_WARNING, L"sqliteデータベースにすでに番組が登録済みです\n");
-		goto END1;
+		output_message(MSG_WARNING, L"sqliteデータベースにすでに番組が登録済みなので上書きします\n");
+		ret = db_insert(dbh, pstat->fn_ts, pi, 1, record_id);
+		if (!ret) {
+			output_message(MSG_ERROR, L"sqliteデータベースの追加に失敗しました\n");
+			goto END1;
+		}
 	}
 	ret = sqlite3_exec(dbh, "COMMIT;", NULL, NULL, NULL);
 	if (ret != SQLITE_OK) {
