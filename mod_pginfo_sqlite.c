@@ -1,8 +1,14 @@
 #define _CRT_SECURE_NO_WARNINGS
 
+#ifdef _WIN64
+#pragma comment(lib, "tsdump_x64.lib")
+#pragma comment(lib, "sqlite3_x64.lib")
+#pragma comment(lib, "shlwapi.lib")
+#elif _WIN32
 #pragma comment(lib, "tsdump.lib")
 #pragma comment(lib, "sqlite3.lib")
 #pragma comment(lib, "shlwapi.lib")
+#endif
 
 #include <windows.h>
 #include <stdio.h>
