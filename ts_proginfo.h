@@ -16,7 +16,8 @@
 #define PGINFO_GET					(PGINFO_GET_PAT|PGINFO_GET_SERVICE_INFO|PGINFO_GET_EVENT_INFO|PGINFO_GET_SHORT_TEXT)
 #define PGINFO_GET_ALL				(PGINFO_GET|PGINFO_GET_EXTEND_TEXT|PGINFO_GET_GENRE)
 #define PGINFO_TIMEINFO				(PGINFO_VALID_PCR|PGINFO_GET_TOT|PGINFO_VALID_TOT_PCR)
-#define PGINFO_READY(status)		(( (status) & PGINFO_GET ) == PGINFO_GET)
+#define PGINFO_READY(s)				( ((s)&PGINFO_GET) == PGINFO_GET )
+#define PGINFO_READY_TIMESTAMP(s)	( ((s)&PGINFO_TIMEINFO) == PGINFO_TIMEINFO )
 
 #define MAX_PIDS_PER_SERVICE		64
 #define MAX_SERVICES_PER_CH			32
@@ -159,5 +160,6 @@ MODULE_EXPORT_FUNC int get_extended_text(WCHAR *dst, size_t n, const proginfo_t 
 MODULE_EXPORT_FUNC void get_genre_str(const WCHAR **genre1, const WCHAR **genre2, Cd_t_item item);
 MODULE_EXPORT_FUNC int proginfo_cmp(const proginfo_t *pi1, const proginfo_t *pi2);
 MODULE_EXPORT_FUNC int get_stream_timestamp(const proginfo_t *pi, time_mjd_t *jst_time);
+MODULE_EXPORT_FUNC int get_stream_timestamp_rough(const proginfo_t *pi, time_mjd_t *time_mjd);
 MODULE_EXPORT_FUNC int get_time_offset(time_offset_t *offset, const time_mjd_t *time_target, const time_mjd_t *time_orig);
 MODULE_EXPORT_FUNC void time_add_offset(time_mjd_t *dst, const time_mjd_t *orig, const time_offset_t *offset);
