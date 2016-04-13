@@ -199,7 +199,9 @@ static int db_insert(sqlite3 *dbh, const WCHAR *ts_path, const proginfo_t *pi, i
 	}
 
 	/* 拡張形式イベント記述子 */
-	if (pi->n_items < 0x10000) {
+	if (!(pi->status & PGINFO_GET_EXTEND_TEXT)) {
+		nbo_len = hton16(0);
+	} else if (pi->n_items < 0x10000) {
 		nbo_len = hton16(pi->n_items);
 	} else {
 		nbo_len = hton16(0xffff);
@@ -262,15 +264,35 @@ static int db_insert(sqlite3 *dbh, const WCHAR *ts_path, const proginfo_t *pi, i
 		output_message(MSG_ERROR, L"sqlite3_bind_blob(): %s\n", sqlite3_errmsg16(dbh));
 		goto END;
 	}
-	if (sqlite3_bind_int64(stmt, 9, timenum14(&pi->start)) != SQLITE_OK) {
-		output_message(MSG_ERROR, L"sqlite3_bind_int64(): %s\n", sqlite3_errmsg16(dbh));
-		goto END;
+
+	if(pi->status & PGINFO_UNKNOWN_STARTTIME) {
+		if (sqlite3_bind_null(stmt, 9) != SQLITE_OK) {
+			output_message(MSG_ERROR, L"sqlite3_bind_null(): %s\n", sqlite3_errmsg16(dbh));
+			goto END;
+		}
+		if (sqlite3_bind_null(stmt, 10) != SQLITE_OK) {
+			output_message(MSG_ERROR, L"sqlite3_bind_null(): %s\n", sqlite3_errmsg16(dbh));
+			goto END;
+		}
+	} else {
+		if (sqlite3_bind_int64(stmt, 9, timenum14(&pi->start)) != SQLITE_OK) {
+			output_message(MSG_ERROR, L"sqlite3_bind_int64(): %s\n", sqlite3_errmsg16(dbh));
+			goto END;
+		}
+		if (pi->status & PGINFO_UNKNOWN_DURATION) {
+			if (sqlite3_bind_null(stmt, 10) != SQLITE_OK) {
+				output_message(MSG_ERROR, L"sqlite3_bind_null(): %s\n", sqlite3_errmsg16(dbh));
+				goto END;
+			}
+		} else {
+			time_add_offset(&endtime, &pi->start, &pi->dur);
+			if (sqlite3_bind_int64(stmt, 10, timenum14(&endtime)) != SQLITE_OK) {
+				output_message(MSG_ERROR, L"sqlite3_bind_int64(): %s\n", sqlite3_errmsg16(dbh));
+				goto END;
+			}
+		}
 	}
-	time_add_offset(&endtime, &pi->start, &pi->dur);
-	if (sqlite3_bind_int64(stmt, 10, timenum14(&endtime)) != SQLITE_OK) {
-		output_message(MSG_ERROR, L"sqlite3_bind_int64(): %s\n", sqlite3_errmsg16(dbh));
-		goto END;
-	}
+
 	if (sqlite3_bind_text16(stmt, 11, genre_str, sizeof(WCHAR)*genre_str_used, SQLITE_STATIC) != SQLITE_OK) {
 		output_message(MSG_ERROR, L"sqlite3_bind_text16(): %s\n", sqlite3_errmsg16(dbh));
 		goto END;
