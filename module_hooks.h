@@ -5,8 +5,9 @@ typedef const WCHAR* (*cmd_handler_t)(const WCHAR*);
 typedef enum {
 	TSDUMP_MODULE_NONE = 0,
 /*	TSDUMP_MODULE_V1 = 1,
-	TSDUMP_MODULE_V2 = 2,*/
-	TSDUMP_MODULE_V3 = 3,
+	TSDUMP_MODULE_V2 = 2,
+	TSDUMP_MODULE_V3 = 3,*/
+	TSDUMP_MODULE_V4 = 4,
 } module_ver;
 
 typedef struct{
@@ -38,6 +39,7 @@ typedef void* (*hook_pgoutput_create_t)(const WCHAR*, const proginfo_t*, const c
 typedef void(*hook_pgoutput_t)(void*, const unsigned char*, const size_t);
 typedef const int(*hook_pgoutput_check_t)(void*);
 typedef const int(*hook_pgoutput_wait_t)(void*);
+typedef const void(*hook_pgoutput_changed_t)(void*, const proginfo_t*, const proginfo_t*);
 typedef void(*hook_pgoutput_end_t)(void*, const proginfo_t*);
 typedef void(*hook_pgoutput_close_t)(void*, const proginfo_t*);
 typedef void(*hook_pgoutput_postclose_t)(void*);
@@ -102,6 +104,7 @@ MODULE_EXPORT_FUNC void register_hook_pgoutput_create(hook_pgoutput_create_t han
 MODULE_EXPORT_FUNC void register_hook_pgoutput(hook_pgoutput_t handler);
 MODULE_EXPORT_FUNC void register_hook_pgoutput_check(hook_pgoutput_check_t handler);
 MODULE_EXPORT_FUNC void register_hook_pgoutput_wait(hook_pgoutput_wait_t handler);
+MODULE_EXPORT_FUNC void register_hook_pgoutput_changed(hook_pgoutput_changed_t handler);
 MODULE_EXPORT_FUNC void register_hook_pgoutput_end(hook_pgoutput_end_t handler);
 MODULE_EXPORT_FUNC void register_hook_pgoutput_close(hook_pgoutput_close_t handler);
 MODULE_EXPORT_FUNC void register_hook_pgoutput_postclose(hook_pgoutput_postclose_t handler);

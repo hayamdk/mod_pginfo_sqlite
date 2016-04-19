@@ -187,7 +187,8 @@ static uint16_t ntoh16(const uint16_t n)
 	return h;
 }
 
-static int db_insert(sqlite3 *dbh, const WCHAR *ts_path, const proginfo_t *pi, int64_t actual_start, int64_t actual_end, int replace, int64_t id)
+static int db_insert(sqlite3 *dbh, const WCHAR *ts_path, const proginfo_t *pi,
+	int64_t actual_start, int64_t actual_end, int64_t logtime, int replace, int logmode, int64_t id)
 {
 	sqlite3_stmt *stmt = NULL;
 	int retval = 0;
@@ -198,7 +199,7 @@ static int db_insert(sqlite3 *dbh, const WCHAR *ts_path, const proginfo_t *pi, i
 	WCHAR *genre1, *genre2, genre_str[2048];
 	int genre_str_used = 0;
 
-	uint8_t detail_raw[(sizeof(pi->items->aribdesc) + sizeof(pi->items->aribitem) + 4) * (sizeof(pi->items)/ sizeof(pi->items[0])) + 2];
+	uint8_t detail_raw[(sizeof(pi->items->desc.aribstr_len) + sizeof(pi->items->item.aribstr_len) + 4) * (sizeof(pi->items)/ sizeof(pi->items[0])) + 2];
 	WCHAR detail_str[(sizeof(pi->items->desc) + sizeof(pi->items->item) + 6) * (sizeof(pi->items) / sizeof(pi->items[0]))];
 	int detail_raw_used = 0, detail_str_used = 0;
 	uint16_t nbo_len, nbo_len1, nbo_len2;
@@ -208,12 +209,16 @@ static int db_insert(sqlite3 *dbh, const WCHAR *ts_path, const proginfo_t *pi, i
 
 	if (replace) {
 		str_sql = "REPLACE INTO programs( nid, tsid, service_id, service_name, service_name_raw, event_id, program_name, program_name_raw,"
-			" start, end, actual_start, actual_end, genre, genre_raw, program_text, program_text_raw, program_detail, program_detail_raw, record_filename, future, id ) "
+			" start, end, genre, genre_raw, program_text, program_text_raw, program_detail, program_detail_raw, record_filename, actual_start, actual_end, future, id ) "
 			"values(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)";
-	} else {
+	} else if(!logmode) {
 		str_sql = "INSERT INTO programs( nid, tsid, service_id, service_name, service_name_raw, event_id, program_name, program_name_raw,"
-			" start, end, actual_start, actual_end, genre, genre_raw, program_text, program_text_raw, program_detail, program_detail_raw, record_filename, future ) "
+			" start, end, genre, genre_raw, program_text, program_text_raw, program_detail, program_detail_raw, record_filename, actual_start, actual_end, future ) "
 			"values(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)";
+	} else {
+		str_sql = "INSERT INTO changelog( nid, tsid, service_id, service_name, service_name_raw, event_id, program_name, program_name_raw,"
+			" start, end, genre, genre_raw, program_text, program_text_raw, program_detail, program_detail_raw, record_filename, time, actual_time ) "
+			"values(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)";
 	}
 
 	/* ジャンル情報 */
@@ -246,15 +251,15 @@ static int db_insert(sqlite3 *dbh, const WCHAR *ts_path, const proginfo_t *pi, i
 	}
 	bin_concat(detail_raw, &detail_raw_used, sizeof(detail_raw), (uint8_t*)&nbo_len, sizeof(nbo_len));
 	for (i = 0; i < ntoh16(nbo_len); i++) {
-		nbo_len1 = hton16((uint16_t)pi->items[i].aribdesc_len);
-		nbo_len2 = hton16((uint16_t)pi->items[i].aribitem_len);
+		nbo_len1 = hton16((uint16_t)pi->items[i].desc.aribstr_len);
+		nbo_len2 = hton16((uint16_t)pi->items[i].item.aribstr_len);
 		bin_concat(detail_raw, &detail_raw_used, sizeof(detail_raw), (uint8_t*)&nbo_len1, sizeof(nbo_len1));
-		bin_concat(detail_raw, &detail_raw_used, sizeof(detail_raw), pi->items[i].aribdesc, pi->items[i].aribdesc_len);
+		bin_concat(detail_raw, &detail_raw_used, sizeof(detail_raw), pi->items[i].desc.aribstr, pi->items[i].desc.aribstr_len);
 		bin_concat(detail_raw, &detail_raw_used, sizeof(detail_raw), (uint8_t*)&nbo_len2, sizeof(nbo_len2));
-		bin_concat(detail_raw, &detail_raw_used, sizeof(detail_raw), pi->items[i].aribitem, pi->items[i].aribitem_len);
-		str_concat(detail_str, &detail_str_used, sizeof(detail_str) / sizeof(WCHAR), pi->items[i].desc);
+		bin_concat(detail_raw, &detail_raw_used, sizeof(detail_raw), pi->items[i].item.aribstr, pi->items[i].item.aribstr_len);
+		str_concat(detail_str, &detail_str_used, sizeof(detail_str) / sizeof(WCHAR), pi->items[i].desc.str);
 		str_concat(detail_str, &detail_str_used, sizeof(detail_str) / sizeof(WCHAR), L"\n");
-		str_concat(detail_str, &detail_str_used, sizeof(detail_str) / sizeof(WCHAR), pi->items[i].item);
+		str_concat(detail_str, &detail_str_used, sizeof(detail_str) / sizeof(WCHAR), pi->items[i].item.str);
 		if (i == ntoh16(nbo_len1) - 1) {
 			str_concat(detail_str, &detail_str_used, sizeof(detail_str) / sizeof(WCHAR), L"\n");
 		} else {
@@ -331,64 +336,84 @@ static int db_insert(sqlite3 *dbh, const WCHAR *ts_path, const proginfo_t *pi, i
 		}
 	}
 
-	if (actual_start > 0) {
-		if (sqlite3_bind_int64(stmt, 11, actual_start) != SQLITE_OK) {
-			output_message(MSG_ERROR, L"sqlite3_bind_int64(): %s\n", sqlite3_errmsg16(dbh));
+	if (sqlite3_bind_text16(stmt, 11, genre_str, sizeof(WCHAR)*genre_str_used, SQLITE_STATIC) != SQLITE_OK) {
+		output_message(MSG_ERROR, L"sqlite3_bind_text16(): %s\n", sqlite3_errmsg16(dbh));
+		goto END;
+	}
+	if (sqlite3_bind_blob(stmt, 12, genre_raw, 15, SQLITE_STATIC) != SQLITE_OK) {
+		output_message(MSG_ERROR, L"sqlite3_bind_blob(): %s\n", sqlite3_errmsg16(dbh));
+		goto END;
+	}
+	if (sqlite3_bind_text16(stmt, 13, pi->event_text.str, sizeof(WCHAR)*pi->event_text.str_len, SQLITE_STATIC) != SQLITE_OK) {
+		output_message(MSG_ERROR, L"sqlite3_bind_text16(): %s\n", sqlite3_errmsg16(dbh));
+		goto END;
+	}
+	if (sqlite3_bind_blob(stmt, 14, pi->event_text.aribstr, pi->event_text.aribstr_len, SQLITE_STATIC) != SQLITE_OK) {
+		output_message(MSG_ERROR, L"sqlite3_bind_blob(): %s\n", sqlite3_errmsg16(dbh));
+		goto END;
+	}
+	if (sqlite3_bind_text16(stmt, 15, detail_str, sizeof(WCHAR)*detail_str_used, SQLITE_STATIC) != SQLITE_OK) {
+		output_message(MSG_ERROR, L"sqlite3_bind_text16(): %s\n", sqlite3_errmsg16(dbh));
+		goto END;
+	}
+	if (sqlite3_bind_blob(stmt, 16, detail_raw, detail_raw_used, SQLITE_STATIC) != SQLITE_OK) {
+		output_message(MSG_ERROR, L"sqlite3_bind_blob(): %s\n", sqlite3_errmsg16(dbh));
+		goto END;
+	}
+	if (sqlite3_bind_text16(stmt, 17, ts_fname, sizeof(WCHAR)*wcslen(ts_fname) , SQLITE_STATIC) != SQLITE_OK) {
+		output_message(MSG_ERROR, L"sqlite3_bind_text16(): %s\n", sqlite3_errmsg16(dbh));
+		goto END;
+	}
+
+	if (!logmode) {
+
+		if (actual_start > 0) {
+			if (sqlite3_bind_int64(stmt, 18, actual_start) != SQLITE_OK) {
+				output_message(MSG_ERROR, L"sqlite3_bind_int64(): %s\n", sqlite3_errmsg16(dbh));
+				goto END;
+			}
+		} else {
+			if (sqlite3_bind_null(stmt, 18) != SQLITE_OK) {
+				output_message(MSG_ERROR, L"sqlite3_bind_null(): %s\n", sqlite3_errmsg16(dbh));
+				goto END;
+			}
+		}
+
+		if (actual_end > 0) {
+			if (sqlite3_bind_int64(stmt, 19, actual_end) != SQLITE_OK) {
+				output_message(MSG_ERROR, L"sqlite3_bind_int64(): %s\n", sqlite3_errmsg16(dbh));
+				goto END;
+			}
+		} else {
+			if (sqlite3_bind_null(stmt, 19) != SQLITE_OK) {
+				output_message(MSG_ERROR, L"sqlite3_bind_null(): %s\n", sqlite3_errmsg16(dbh));
+				goto END;
+			}
+		}
+
+		if (sqlite3_bind_int(stmt, 20, 0) != SQLITE_OK) {
+			output_message(MSG_ERROR, L"sqlite3_bind_int(): %s\n", sqlite3_errmsg16(dbh));
 			goto END;
 		}
 	} else {
-		if (sqlite3_bind_null(stmt, 11) != SQLITE_OK) {
-			output_message(MSG_ERROR, L"sqlite3_bind_null(): %s\n", sqlite3_errmsg16(dbh));
-			goto END;
+		if (logtime > 0) {
+			if (sqlite3_bind_int64(stmt, 18, logtime) != SQLITE_OK) {
+				output_message(MSG_ERROR, L"sqlite3_bind_int64(): %s\n", sqlite3_errmsg16(dbh));
+				goto END;
+			}
+		} else {
+			if (sqlite3_bind_null(stmt, 18) != SQLITE_OK) {
+				output_message(MSG_ERROR, L"sqlite3_bind_null(): %s\n", sqlite3_errmsg16(dbh));
+				goto END;
+			}
 		}
-	}
-
-	if (actual_end > 0) {
-		if (sqlite3_bind_int64(stmt, 12, actual_end) != SQLITE_OK) {
+		if (sqlite3_bind_int64(stmt, 19, timenum14_now()) != SQLITE_OK) {
 			output_message(MSG_ERROR, L"sqlite3_bind_int64(): %s\n", sqlite3_errmsg16(dbh));
 			goto END;
 		}
-	} else {
-		if (sqlite3_bind_null(stmt, 12) != SQLITE_OK) {
-			output_message(MSG_ERROR, L"sqlite3_bind_null(): %s\n", sqlite3_errmsg16(dbh));
-			goto END;
-		}
 	}
 
-	if (sqlite3_bind_text16(stmt, 13, genre_str, sizeof(WCHAR)*genre_str_used, SQLITE_STATIC) != SQLITE_OK) {
-		output_message(MSG_ERROR, L"sqlite3_bind_text16(): %s\n", sqlite3_errmsg16(dbh));
-		goto END;
-	}
-	if (sqlite3_bind_blob(stmt, 14, genre_raw, 15, SQLITE_STATIC) != SQLITE_OK) {
-		output_message(MSG_ERROR, L"sqlite3_bind_blob(): %s\n", sqlite3_errmsg16(dbh));
-		goto END;
-	}
-	if (sqlite3_bind_text16(stmt, 15, pi->event_text.str, sizeof(WCHAR)*pi->event_text.str_len, SQLITE_STATIC) != SQLITE_OK) {
-		output_message(MSG_ERROR, L"sqlite3_bind_text16(): %s\n", sqlite3_errmsg16(dbh));
-		goto END;
-	}
-	if (sqlite3_bind_blob(stmt, 16, pi->event_text.aribstr, pi->event_text.aribstr_len, SQLITE_STATIC) != SQLITE_OK) {
-		output_message(MSG_ERROR, L"sqlite3_bind_blob(): %s\n", sqlite3_errmsg16(dbh));
-		goto END;
-	}
-	if (sqlite3_bind_text16(stmt, 17, detail_str, sizeof(WCHAR)*detail_str_used, SQLITE_STATIC) != SQLITE_OK) {
-		output_message(MSG_ERROR, L"sqlite3_bind_text16(): %s\n", sqlite3_errmsg16(dbh));
-		goto END;
-	}
-	if (sqlite3_bind_blob(stmt, 18, detail_raw, detail_raw_used, SQLITE_STATIC) != SQLITE_OK) {
-		output_message(MSG_ERROR, L"sqlite3_bind_blob(): %s\n", sqlite3_errmsg16(dbh));
-		goto END;
-	}
-	if (sqlite3_bind_text16(stmt, 19, ts_fname, sizeof(WCHAR)*wcslen(ts_fname) , SQLITE_STATIC) != SQLITE_OK) {
-		output_message(MSG_ERROR, L"sqlite3_bind_text16(): %s\n", sqlite3_errmsg16(dbh));
-		goto END;
-	}
-	if (sqlite3_bind_int(stmt, 20, 0) != SQLITE_OK) {
-		output_message(MSG_ERROR, L"sqlite3_bind_int(): %s\n", sqlite3_errmsg16(dbh));
-		goto END;
-	}
-
-	if (replace) {
+	if (replace && !logmode) {
 		if (sqlite3_bind_int64(stmt, 21, id) != SQLITE_OK) {
 			output_message(MSG_ERROR, L"sqlite3_bind_int64(): %s\n", sqlite3_errmsg16(dbh));
 			goto END;
@@ -409,18 +434,19 @@ END:
 	return retval;
 }
 
-static void register_to_db(mod_stat_t *pstat, const proginfo_t* pi)
+static void register_to_db(mod_stat_t *pstat, const proginfo_t* pi, int logmode)
 {
 	sqlite3 *dbh = NULL;
 	int ret, commit_ok = 0;
-	int64_t record_id, actual_start;
+	int64_t record_id, actual_start, logtime14;
+	time_mjd_t logtime;
 
 	if (!pstat) {
 		return;
 	}
 
 	if (!PGINFO_READY(pi->status)) {
-		goto END3;
+		return;
 	}
 
 	ret = sqlite3_open16(db_fname, &dbh);
@@ -442,26 +468,41 @@ static void register_to_db(mod_stat_t *pstat, const proginfo_t* pi)
 		output_message(MSG_ERROR, L"sqliteのトランザクション開始に失敗しました\n");
 		goto END2;
 	}
-	ret = db_search(dbh, pi, &record_id, &actual_start);
-	if (ret == 0) {
-		output_message(MSG_ERROR, L"sqliteデータベースの検索に失敗しました\n");
-		goto END1;
-	} else if (ret == 1) {
-		/* 同じ番組の情報がまだデータベースに登録されていない */
-		ret = db_insert(dbh, pstat->fn_ts, pi, pstat->actual_start, pstat->actual_end, 0, 0);
-		if (!ret) {
-			output_message(MSG_ERROR, L"sqliteデータベースの追加に失敗しました\n");
+
+	if(!logmode) {
+		ret = db_search(dbh, pi, &record_id, &actual_start);
+		if (ret == 0) {
+			output_message(MSG_ERROR, L"sqliteデータベースの検索に失敗しました\n");
 			goto END1;
+		} else if (ret == 1) {
+			/* 同じ番組の情報がまだデータベースに登録されていない */
+			ret = db_insert(dbh, pstat->fn_ts, pi, pstat->actual_start, pstat->actual_end, 0, 0, 0, 0);
+			if (!ret) {
+				output_message(MSG_ERROR, L"sqliteデータベースの追加に失敗しました\n");
+				goto END1;
+			}
+		} else {
+			/* 同じ番組の情報がデータベースに登録済み */
+			output_message(MSG_WARNING, L"sqliteデータベースにすでに番組が登録済みなので上書きします\n");
+			ret = db_insert(dbh, pstat->fn_ts, pi, actual_start, pstat->actual_end, 0, 1, 0, record_id);
+			if (!ret) {
+				output_message(MSG_ERROR, L"sqliteデータベースの追加に失敗しました\n");
+				goto END1;
+			}
 		}
 	} else {
-		/* 同じ番組の情報がデータベースに登録済み */
-		output_message(MSG_WARNING, L"sqliteデータベースにすでに番組が登録済みなので上書きします\n");
-		ret = db_insert(dbh, pstat->fn_ts, pi, actual_start, pstat->actual_end, 1, record_id);
+		if( get_stream_timestamp(pi, &logtime) ) {
+			logtime14 = timenum14(&logtime);
+		} else {
+			logtime14 = -1;
+		}
+		ret = db_insert(dbh, pstat->fn_ts, pi, 0, 0, logtime14, 0, 1, 0);
 		if (!ret) {
 			output_message(MSG_ERROR, L"sqliteデータベースの追加に失敗しました\n");
 			goto END1;
 		}
 	}
+
 	ret = sqlite3_exec(dbh, "COMMIT;", NULL, NULL, NULL);
 	if (ret != SQLITE_OK) {
 		output_message(MSG_ERROR, L"sqlite3_exec(): %s\n", sqlite3_errmsg16(dbh));
@@ -486,8 +527,12 @@ END2:
 		output_message(MSG_ERROR, L"sqlite3_close(): %s\n", sqlite3_errmsg16(dbh));
 		output_message(MSG_ERROR, L"sqliteデータベースのクローズに失敗しました\n");
 	}
-END3:
-	free(pstat);
+}
+
+static void hook_pgoutput_changed(void *ps, const proginfo_t* pi_old, const proginfo_t *pi_new)
+{
+	mod_stat_t *pstat = (mod_stat_t*)ps;
+	register_to_db(pstat, pi_old, 1);
 }
 
 static void hook_pgoutput_end(void *ps, const proginfo_t* pi)
@@ -500,7 +545,10 @@ static void hook_pgoutput_end(void *ps, const proginfo_t* pi)
 static void hook_pgoutput_close(void *ps, const proginfo_t* pi)
 {
 	mod_stat_t *pstat = (mod_stat_t*)ps;
-	register_to_db(pstat, pi);
+	register_to_db(pstat, pi, 0);
+	if (pstat) {
+		free(pstat);
+	}
 }
 
 static void hook_close_stream()
@@ -513,6 +561,7 @@ static void hook_close_stream()
 static void register_hooks()
 {
 	register_hook_pgoutput_create(hook_pgoutput_create);
+	register_hook_pgoutput_changed(hook_pgoutput_changed);
 	register_hook_pgoutput_end(hook_pgoutput_end);
 	register_hook_pgoutput_close(hook_pgoutput_close);
 	register_hook_close_stream(hook_close_stream);
@@ -530,7 +579,7 @@ static cmd_def_t cmds[] = {
 };
 
 MODULE_DEF module_def_t mod_pginfo_sqlite = {
-	TSDUMP_MODULE_V3,
+	TSDUMP_MODULE_V4,
 	L"mod_pginfo_sqlite",
 	register_hooks,
 	cmds
