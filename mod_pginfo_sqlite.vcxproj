@@ -51,8 +51,9 @@
       </PrecompiledHeader>
       <WarningLevel>Level3</WarningLevel>
       <Optimization>Disabled</Optimization>
-      <PreprocessorDefinitions>WIN32;_DEBUG;_WINDOWS;_USRDLL;MOD_PGINFO_SQLITE_EXPORTS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>WIN32;_DEBUG;_WINDOWS;_USRDLL;MOD_PGINFO_SQLITE_EXPORTS;%(PreprocessorDefinitions);IN_SHARED_MODULE</PreprocessorDefinitions>
       <SDLCheck>true</SDLCheck>
+      <AdditionalIncludeDirectories>$(SolutionDir)</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
@@ -67,8 +68,9 @@
       <Optimization>MaxSpeed</Optimization>
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <IntrinsicFunctions>true</IntrinsicFunctions>
-      <PreprocessorDefinitions>WIN32;NDEBUG;_WINDOWS;_USRDLL;MOD_PGINFO_SQLITE_EXPORTS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>WIN32;NDEBUG;_WINDOWS;_USRDLL;MOD_PGINFO_SQLITE_EXPORTS;%(PreprocessorDefinitions);IN_SHARED_MODULE</PreprocessorDefinitions>
       <SDLCheck>true</SDLCheck>
+      <AdditionalIncludeDirectories>$(SolutionDir)</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
@@ -79,11 +81,17 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="mod_pginfo_sqlite.c" />
+    <ClCompile Include="utils/tsdstr.c" />
+    <ClCompile Include="utils/path.c" />
+    <ClCompile Include="utils\aribstr.c" />
+    <ClCompile Include="utils\ts_parser.c" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="module_def.h" />
-    <ClInclude Include="ts_proginfo.h" />
-    <ClInclude Include="module_hooks.h" />
+    <ClInclude Include="core/tsdump_def.h" />
+    <ClInclude Include="core/module_hooks.h" />
+    <ClInclude Include="utils/arib_proginfo.h" />
+    <ClInclude Include="utils/tsdstr.h" />
+    <ClInclude Include="utils/path.h" />
     <ClInclude Include="sqlite3.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />

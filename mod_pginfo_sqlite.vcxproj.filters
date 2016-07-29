@@ -18,15 +18,33 @@
     <ClCompile Include="mod_pginfo_sqlite.c">
       <Filter>ソース ファイル</Filter>
     </ClCompile>
+    <ClCompile Include="utils/tsdstr.c">
+      <Filter>ソース ファイル</Filter>
+    </ClCompile>
+    <ClCompile Include="utils/path.c">
+      <Filter>ソース ファイル</Filter>
+    </ClCompile>
+    <ClCompile Include="utils\ts_parser.c">
+      <Filter>ソース ファイル</Filter>
+    </ClCompile>
+    <ClCompile Include="utils\aribstr.c">
+      <Filter>ソース ファイル</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="module_def.h">
+    <ClInclude Include="core/tsdump_def.h">
       <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
-    <ClInclude Include="ts_proginfo.h">
+    <ClInclude Include="core/module_hooks.h">
       <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
-    <ClInclude Include="module_hooks.h">
+    <ClInclude Include="utils/arib_proginfo.h">
+      <Filter>ヘッダー ファイル</Filter>
+    </ClInclude>
+    <ClInclude Include="utils/tsdstr.h">
+      <Filter>ヘッダー ファイル</Filter>
+    </ClInclude>
+    <ClInclude Include="utils/path.h">
       <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
     <ClInclude Include="sqlite3.h">
