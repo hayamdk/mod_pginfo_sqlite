@@ -129,13 +129,13 @@ int get_extended_text(TSDCHAR *dst, size_t n, const proginfo_t *pi)
 	}
 
 	for (i = 0; i < pi->n_items && p < end; i++) {
-		tsd_strncpy(p, pi->items[i].desc.str, end - p);
+		tsd_strlcpy(p, pi->items[i].desc.str, end - p);
 		while (*p != L'\0') { p++; }
-		tsd_strncpy(p, TSD_TEXT("\n"), end - p);
+		tsd_strlcpy(p, TSD_TEXT("\n"), end - p);
 		while (*p != L'\0') { p++; }
-		tsd_strncpy(p, pi->items[i].item.str, end - p);
+		tsd_strlcpy(p, pi->items[i].item.str, end - p);
 		while (*p != L'\0') { p++; }
-		tsd_strncpy(p, TSD_TEXT("\n"), end - p);
+		tsd_strlcpy(p, TSD_TEXT("\n"), end - p);
 		while (*p != L'\0') { p++; }
 	}
 	return 1;
@@ -181,9 +181,9 @@ int cmp_genre(const Cd_t *genre1, const Cd_t *genre2)
 	}
 	for (i = 0; i < genre1->n_items; i++) {
 		if( genre1->items[i].content_nibble_level_1 != genre2->items[i].content_nibble_level_1 ||
-				genre1->items[i].content_nibble_level_2 != genre1->items[i].content_nibble_level_2 ||
-				genre1->items[i].user_nibble_1 != genre1->items[i].user_nibble_1 ||
-				genre1->items[i].user_nibble_2 != genre1->items[i].user_nibble_2 ) {
+				genre1->items[i].content_nibble_level_2 != genre2->items[i].content_nibble_level_2 ||
+				genre1->items[i].user_nibble_1 != genre2->items[i].user_nibble_1 ||
+				genre1->items[i].user_nibble_2 != genre2->items[i].user_nibble_2 ) {
 			return 1;
 		}
 	}
@@ -901,7 +901,7 @@ void parse_EIT_Cd(const uint8_t *desc, Cd_t *cd)
 
 void parse_PCR(const uint8_t *packet, const ts_header_t *tsh, void *param, service_callback_handler_t handler)
 {
-	int get = 0, wraparounded;
+	int wraparounded;
 	const uint8_t *p;
 	uint64_t PCR_base = 0;
 	int64_t offset;
@@ -924,11 +924,8 @@ void parse_PCR(const uint8_t *packet, const ts_header_t *tsh, void *param, servi
 	}
 
 	if (tsh->pid == current_proginfo->PCR_pid) {
-		if (!get) {
-			PCR_base = get_bits64(p, 8, 33);
-			PCR_ext = get_bits(p, 47, 9);
-			get = 1;
-		}
+		PCR_base = get_bits64(p, 8, 33);
+		PCR_ext = get_bits(p, 47, 9);
 		offset = (int64_t)PCR_base - (int64_t)current_proginfo->PCR_base;
 		wraparounded = 0;
 		if (offset < 0) {

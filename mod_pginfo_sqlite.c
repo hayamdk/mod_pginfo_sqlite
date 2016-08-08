@@ -104,7 +104,7 @@ static void *hook_pgoutput_create(const TSDCHAR *fname, const proginfo_t *pi, co
 		return NULL;
 	}
 	pstat = (mod_stat_t*)malloc(sizeof(mod_stat_t));
-	tsd_strncpy(pstat->fn_ts, fname, MAX_PATH_LEN - 1);
+	tsd_strlcpy(pstat->fn_ts, fname, MAX_PATH_LEN - 1);
 	if (actually_start) {
 		pstat->actual_start = timenum14_now();
 	} else {
@@ -181,7 +181,7 @@ END:
 
 static void str_concat(TSDCHAR *dst_base, int *dst_used, int dst_max, const TSDCHAR *str)
 {
-	tsd_strncpy(&dst_base[*dst_used], str, dst_max - *dst_used - 1);
+	tsd_strlcpy(&dst_base[*dst_used], str, dst_max - *dst_used - 1);
 	*dst_used += tsd_strlen(&dst_base[*dst_used]);
 }
 
@@ -590,7 +590,7 @@ static void register_hooks()
 static const TSDCHAR *set_db(const TSDCHAR *param)
 {
 	set_db_fname = 1;
-	tsd_strncpy(db_fname, param, MAX_PATH_LEN);
+	tsd_strlcpy(db_fname, param, MAX_PATH_LEN);
 	return NULL;
 }
 
@@ -598,8 +598,6 @@ static cmd_def_t cmds[] = {
 	{ TSD_TEXT("--pgdb"), TSD_TEXT("sqlite DBƒtƒ@ƒCƒ‹"), 1, set_db },
 	{ NULL },
 };
-
-#define TSDUMP_MODULE_V4 4
 
 TSD_MODULE_DEF(
 	mod_pginfo_sqlite,
