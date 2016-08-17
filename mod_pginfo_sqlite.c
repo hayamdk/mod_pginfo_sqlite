@@ -469,10 +469,6 @@ static void register_to_db(mod_stat_t *pstat, const proginfo_t* pi, int logmode)
 	int64_t record_id, actual_start, logtime14;
 	time_mjd_t logtime;
 
-	if (!pstat) {
-		return;
-	}
-
 	if (!PGINFO_READY(pi->status)) {
 		return;
 	}
@@ -560,6 +556,9 @@ END2:
 static void hook_pgoutput_changed(void *ps, const proginfo_t* pi_old, const proginfo_t *pi_new)
 {
 	mod_stat_t *pstat = (mod_stat_t*)ps;
+	if (!pstat) {
+		return;
+	}
 	register_to_db(pstat, pi_old, 1);
 }
 
@@ -567,16 +566,20 @@ static void hook_pgoutput_end(void *ps, const proginfo_t* pi)
 {
 	UNREF_ARG(pi);
 	mod_stat_t *pstat = (mod_stat_t*)ps;
+	if (!pstat) {
+		return;
+	}
 	pstat->actual_end = timenum14_now();
 }
 
 static void hook_pgoutput_close(void *ps, const proginfo_t* pi)
 {
 	mod_stat_t *pstat = (mod_stat_t*)ps;
-	register_to_db(pstat, pi, 0);
-	if (pstat) {
-		free(pstat);
+	if (!pstat) { 
+		return;
 	}
+	register_to_db(pstat, pi, 0);
+	free(pstat);
 }
 
 static void register_hooks()
