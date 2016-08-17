@@ -287,7 +287,7 @@ static int db_insert(sqlite3 *dbh, const TSDCHAR *ts_path, const proginfo_t *pi,
 		str_concat(detail_str, &detail_str_used, sizeof(detail_str) / sizeof(TSDCHAR), pi->items[i].desc.str);
 		str_concat(detail_str, &detail_str_used, sizeof(detail_str) / sizeof(TSDCHAR), TSD_TEXT("\n"));
 		str_concat(detail_str, &detail_str_used, sizeof(detail_str) / sizeof(TSDCHAR), pi->items[i].item.str);
-		if (i == ntoh16(nbo_len1) - 1) {
+		if (i == ntoh16(nbo_len) - 1) {
 			str_concat(detail_str, &detail_str_used, sizeof(detail_str) / sizeof(TSDCHAR), TSD_TEXT("\n"));
 		} else {
 			str_concat(detail_str, &detail_str_used, sizeof(detail_str) / sizeof(TSDCHAR), TSD_TEXT("\n\n"));
