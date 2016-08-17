@@ -128,16 +128,16 @@ static int db_search(sqlite3 *dbh, const proginfo_t *pi, int64_t *rec_id, int64_
 	const char str[] = "SELECT * FROM programs WHERE service_id = ? AND event_id = ? AND start > ? AND start < ?";
 
 	if (sqlite3_prepare_v2(dbh, str, sizeof(str) + 1, &stmt, NULL) != SQLITE_OK) {
-		output_message(MSG_ERROR, TSD_TEXT("sqlite3_prepare_v2(): %s\n"), sqlite3_errmsg(dbh));
+		output_message(MSG_ERROR, TSD_TEXT("sqlite3_prepare_v2(): %s"), sqlite3_errmsg(dbh));
 		goto END;
 	}
 	if (sqlite3_bind_int(stmt, 1, pi->service_id) != SQLITE_OK) {
-		output_message(MSG_ERROR, TSD_TEXT("sqlite3_bind_int(): %s\n"), sqlite3_errmsg(dbh));
+		output_message(MSG_ERROR, TSD_TEXT("sqlite3_bind_int(): %s"), sqlite3_errmsg(dbh));
 		sqlite3_finalize(stmt);
 		goto END;
 	}
 	if (sqlite3_bind_int(stmt, 2, pi->event_id) != SQLITE_OK) {
-		output_message(MSG_ERROR, TSD_TEXT(""SQLITE3_BIND_TEXT_FUNCNAME"(): %s\n"), sqlite3_errmsg(dbh));
+		output_message(MSG_ERROR, TSD_TEXT(""SQLITE3_BIND_TEXT_FUNCNAME"(): %s"), sqlite3_errmsg(dbh));
 		sqlite3_finalize(stmt);
 		goto END;
 	}
@@ -148,12 +148,12 @@ static int db_search(sqlite3 *dbh, const proginfo_t *pi, int64_t *rec_id, int64_
 	time_add_offset(&start_min, &pi->start, &offset_day);
 
 	if (sqlite3_bind_int64(stmt, 3, timenum14(&start_min)) != SQLITE_OK) {
-		output_message(MSG_ERROR, TSD_TEXT("sqlite3_bind_int64(): %s\n"), sqlite3_errmsg(dbh));
+		output_message(MSG_ERROR, TSD_TEXT("sqlite3_bind_int64(): %s"), sqlite3_errmsg(dbh));
 		sqlite3_finalize(stmt);
 		goto END;
 	}
 	if (sqlite3_bind_int64(stmt, 4, timenum14(&start_max)) != SQLITE_OK) {
-		output_message(MSG_ERROR, TSD_TEXT("sqlite3_bind_int64(): %s\n"), sqlite3_errmsg(dbh));
+		output_message(MSG_ERROR, TSD_TEXT("sqlite3_bind_int64(): %s"), sqlite3_errmsg(dbh));
 		sqlite3_finalize(stmt);
 		goto END;
 	}
@@ -173,7 +173,7 @@ static int db_search(sqlite3 *dbh, const proginfo_t *pi, int64_t *rec_id, int64_
 	}
 END:
 	if (sqlite3_finalize(stmt) != SQLITE_OK) {
-		output_message(MSG_ERROR, TSD_TEXT("sqlite3_finalize(): %s\n"), sqlite3_errmsg(dbh));
+		output_message(MSG_ERROR, TSD_TEXT("sqlite3_finalize(): %s"), sqlite3_errmsg(dbh));
 		retval = 0;
 	}
 	return retval;
@@ -300,96 +300,96 @@ static int db_insert(sqlite3 *dbh, const TSDCHAR *ts_path, const proginfo_t *pi,
 	ts_fname = path_getfile(ts_path);
 
 	if( sqlite3_prepare_v2(dbh, str_sql, strlen(str_sql), &stmt, NULL) != SQLITE_OK ) {
-		output_message(MSG_ERROR, TSD_TEXT("sqlite3_prepare_v2(): %s\n"), sqlite3_errmsg(dbh));
+		output_message(MSG_ERROR, TSD_TEXT("sqlite3_prepare_v2(): %s"), sqlite3_errmsg(dbh));
 		return 0;
 	}
 	if( sqlite3_bind_int(stmt, 1, pi->network_id) != SQLITE_OK ) {
-		output_message(MSG_ERROR, TSD_TEXT("sqlite3_bind_int(): %s\n"), sqlite3_errmsg(dbh));
+		output_message(MSG_ERROR, TSD_TEXT("sqlite3_bind_int(): %s"), sqlite3_errmsg(dbh));
 		goto END;
 	}
 	if( sqlite3_bind_int(stmt, 2, pi->ts_id) != SQLITE_OK ) {
-		output_message(MSG_ERROR, TSD_TEXT("sqlite3_bind_int(): %s\n"), sqlite3_errmsg(dbh));
+		output_message(MSG_ERROR, TSD_TEXT("sqlite3_bind_int(): %s"), sqlite3_errmsg(dbh));
 		goto END;
 	}
 	if( sqlite3_bind_int(stmt, 3, pi->service_id) != SQLITE_OK ) {
-		output_message(MSG_ERROR, TSD_TEXT("sqlite3_bind_int(): %s\n"), sqlite3_errmsg(dbh));
+		output_message(MSG_ERROR, TSD_TEXT("sqlite3_bind_int(): %s"), sqlite3_errmsg(dbh));
 		goto END;
 	}
 	if (sqlite3_bind_text(stmt, 4, pi->service_name.str, sizeof(TSDCHAR)*pi->service_name.str_len, SQLITE_STATIC) != SQLITE_OK) {
-		output_message(MSG_ERROR, TSD_TEXT(""SQLITE3_BIND_TEXT_FUNCNAME"(): %s\n"), sqlite3_errmsg(dbh));
+		output_message(MSG_ERROR, TSD_TEXT(""SQLITE3_BIND_TEXT_FUNCNAME"(): %s"), sqlite3_errmsg(dbh));
 		goto END;
 	}
 	if (sqlite3_bind_blob(stmt, 5, pi->service_name.aribstr, pi->service_name.aribstr_len, SQLITE_STATIC) != SQLITE_OK) {
-		output_message(MSG_ERROR, TSD_TEXT("sqlite3_bind_blob(): %s\n"), sqlite3_errmsg(dbh));
+		output_message(MSG_ERROR, TSD_TEXT("sqlite3_bind_blob(): %s"), sqlite3_errmsg(dbh));
 		goto END;
 	}
 	if (sqlite3_bind_int(stmt, 6, pi->event_id) != SQLITE_OK) {
-		output_message(MSG_ERROR, TSD_TEXT("sqlite3_bind_int(): %s\n"), sqlite3_errmsg(dbh));
+		output_message(MSG_ERROR, TSD_TEXT("sqlite3_bind_int(): %s"), sqlite3_errmsg(dbh));
 		goto END;
 	}
 	if (sqlite3_bind_text(stmt, 7, pi->event_name.str, sizeof(TSDCHAR)*pi->event_name.str_len, SQLITE_STATIC) != SQLITE_OK) {
-		output_message(MSG_ERROR, TSD_TEXT(""SQLITE3_BIND_TEXT_FUNCNAME"(): %s\n"), sqlite3_errmsg(dbh));
+		output_message(MSG_ERROR, TSD_TEXT(""SQLITE3_BIND_TEXT_FUNCNAME"(): %s"), sqlite3_errmsg(dbh));
 		goto END;
 	}
 	if (sqlite3_bind_blob(stmt, 8, pi->event_name.aribstr, pi->event_name.aribstr_len, SQLITE_STATIC) != SQLITE_OK) {
-		output_message(MSG_ERROR, TSD_TEXT("sqlite3_bind_blob(): %s\n"), sqlite3_errmsg(dbh));
+		output_message(MSG_ERROR, TSD_TEXT("sqlite3_bind_blob(): %s"), sqlite3_errmsg(dbh));
 		goto END;
 	}
 
 	if(pi->status & PGINFO_UNKNOWN_STARTTIME) {
 		if (sqlite3_bind_null(stmt, 9) != SQLITE_OK) {
-			output_message(MSG_ERROR, TSD_TEXT("sqlite3_bind_null(): %s\n"), sqlite3_errmsg(dbh));
+			output_message(MSG_ERROR, TSD_TEXT("sqlite3_bind_null(): %s"), sqlite3_errmsg(dbh));
 			goto END;
 		}
 		if (sqlite3_bind_null(stmt, 10) != SQLITE_OK) {
-			output_message(MSG_ERROR, TSD_TEXT("sqlite3_bind_null(): %s\n"), sqlite3_errmsg(dbh));
+			output_message(MSG_ERROR, TSD_TEXT("sqlite3_bind_null(): %s"), sqlite3_errmsg(dbh));
 			goto END;
 		}
 	} else {
 		if (sqlite3_bind_int64(stmt, 9, timenum14(&pi->start)) != SQLITE_OK) {
-			output_message(MSG_ERROR, TSD_TEXT("sqlite3_bind_int64(): %s\n"), sqlite3_errmsg(dbh));
+			output_message(MSG_ERROR, TSD_TEXT("sqlite3_bind_int64(): %s"), sqlite3_errmsg(dbh));
 			goto END;
 		}
 		if (pi->status & PGINFO_UNKNOWN_DURATION) {
 			if (sqlite3_bind_null(stmt, 10) != SQLITE_OK) {
-				output_message(MSG_ERROR, TSD_TEXT("sqlite3_bind_null(): %s\n"), sqlite3_errmsg(dbh));
+				output_message(MSG_ERROR, TSD_TEXT("sqlite3_bind_null(): %s"), sqlite3_errmsg(dbh));
 				goto END;
 			}
 		} else {
 			time_add_offset(&endtime, &pi->start, &pi->dur);
 			if (sqlite3_bind_int64(stmt, 10, timenum14(&endtime)) != SQLITE_OK) {
-				output_message(MSG_ERROR, TSD_TEXT("sqlite3_bind_int64(): %s\n"), sqlite3_errmsg(dbh));
+				output_message(MSG_ERROR, TSD_TEXT("sqlite3_bind_int64(): %s"), sqlite3_errmsg(dbh));
 				goto END;
 			}
 		}
 	}
 
 	if (sqlite3_bind_text(stmt, 11, genre_str, sizeof(TSDCHAR)*genre_str_used, SQLITE_STATIC) != SQLITE_OK) {
-		output_message(MSG_ERROR, TSD_TEXT(""SQLITE3_BIND_TEXT_FUNCNAME"(): %s\n"), sqlite3_errmsg(dbh));
+		output_message(MSG_ERROR, TSD_TEXT(""SQLITE3_BIND_TEXT_FUNCNAME"(): %s"), sqlite3_errmsg(dbh));
 		goto END;
 	}
 	if (sqlite3_bind_blob(stmt, 12, genre_raw, 15, SQLITE_STATIC) != SQLITE_OK) {
-		output_message(MSG_ERROR, TSD_TEXT("sqlite3_bind_blob(): %s\n"), sqlite3_errmsg(dbh));
+		output_message(MSG_ERROR, TSD_TEXT("sqlite3_bind_blob(): %s"), sqlite3_errmsg(dbh));
 		goto END;
 	}
 	if (sqlite3_bind_text(stmt, 13, pi->event_text.str, sizeof(TSDCHAR)*pi->event_text.str_len, SQLITE_STATIC) != SQLITE_OK) {
-		output_message(MSG_ERROR, TSD_TEXT(""SQLITE3_BIND_TEXT_FUNCNAME"(): %s\n"), sqlite3_errmsg(dbh));
+		output_message(MSG_ERROR, TSD_TEXT(""SQLITE3_BIND_TEXT_FUNCNAME"(): %s"), sqlite3_errmsg(dbh));
 		goto END;
 	}
 	if (sqlite3_bind_blob(stmt, 14, pi->event_text.aribstr, pi->event_text.aribstr_len, SQLITE_STATIC) != SQLITE_OK) {
-		output_message(MSG_ERROR, TSD_TEXT("sqlite3_bind_blob(): %s\n"), sqlite3_errmsg(dbh));
+		output_message(MSG_ERROR, TSD_TEXT("sqlite3_bind_blob(): %s"), sqlite3_errmsg(dbh));
 		goto END;
 	}
 	if (sqlite3_bind_text(stmt, 15, detail_str, sizeof(TSDCHAR)*detail_str_used, SQLITE_STATIC) != SQLITE_OK) {
-		output_message(MSG_ERROR, TSD_TEXT(""SQLITE3_BIND_TEXT_FUNCNAME"(): %s\n"), sqlite3_errmsg(dbh));
+		output_message(MSG_ERROR, TSD_TEXT(""SQLITE3_BIND_TEXT_FUNCNAME"(): %s"), sqlite3_errmsg(dbh));
 		goto END;
 	}
 	if (sqlite3_bind_blob(stmt, 16, detail_raw, detail_raw_used, SQLITE_STATIC) != SQLITE_OK) {
-		output_message(MSG_ERROR, TSD_TEXT("sqlite3_bind_blob(): %s\n"), sqlite3_errmsg(dbh));
+		output_message(MSG_ERROR, TSD_TEXT("sqlite3_bind_blob(): %s"), sqlite3_errmsg(dbh));
 		goto END;
 	}
 	if (sqlite3_bind_text(stmt, 17, ts_fname, sizeof(TSDCHAR)*tsd_strlen(ts_fname) , SQLITE_STATIC) != SQLITE_OK) {
-		output_message(MSG_ERROR, TSD_TEXT(""SQLITE3_BIND_TEXT_FUNCNAME"(): %s\n"), sqlite3_errmsg(dbh));
+		output_message(MSG_ERROR, TSD_TEXT(""SQLITE3_BIND_TEXT_FUNCNAME"(): %s"), sqlite3_errmsg(dbh));
 		goto END;
 	}
 
@@ -397,66 +397,66 @@ static int db_insert(sqlite3 *dbh, const TSDCHAR *ts_path, const proginfo_t *pi,
 
 		if (actual_start > 0) {
 			if (sqlite3_bind_int64(stmt, 18, actual_start) != SQLITE_OK) {
-				output_message(MSG_ERROR, TSD_TEXT("sqlite3_bind_int64(): %s\n"), sqlite3_errmsg(dbh));
+				output_message(MSG_ERROR, TSD_TEXT("sqlite3_bind_int64(): %s"), sqlite3_errmsg(dbh));
 				goto END;
 			}
 		} else {
 			if (sqlite3_bind_null(stmt, 18) != SQLITE_OK) {
-				output_message(MSG_ERROR, TSD_TEXT("sqlite3_bind_null(): %s\n"), sqlite3_errmsg(dbh));
+				output_message(MSG_ERROR, TSD_TEXT("sqlite3_bind_null(): %s"), sqlite3_errmsg(dbh));
 				goto END;
 			}
 		}
 
 		if (actual_end > 0) {
 			if (sqlite3_bind_int64(stmt, 19, actual_end) != SQLITE_OK) {
-				output_message(MSG_ERROR, TSD_TEXT("sqlite3_bind_int64(): %s\n"), sqlite3_errmsg(dbh));
+				output_message(MSG_ERROR, TSD_TEXT("sqlite3_bind_int64(): %s"), sqlite3_errmsg(dbh));
 				goto END;
 			}
 		} else {
 			if (sqlite3_bind_null(stmt, 19) != SQLITE_OK) {
-				output_message(MSG_ERROR, TSD_TEXT("sqlite3_bind_null(): %s\n"), sqlite3_errmsg(dbh));
+				output_message(MSG_ERROR, TSD_TEXT("sqlite3_bind_null(): %s"), sqlite3_errmsg(dbh));
 				goto END;
 			}
 		}
 
 		if (sqlite3_bind_int(stmt, 20, 0) != SQLITE_OK) {
-			output_message(MSG_ERROR, TSD_TEXT("sqlite3_bind_int(): %s\n"), sqlite3_errmsg(dbh));
+			output_message(MSG_ERROR, TSD_TEXT("sqlite3_bind_int(): %s"), sqlite3_errmsg(dbh));
 			goto END;
 		}
 	} else {
 		if (logtime > 0) {
 			if (sqlite3_bind_int64(stmt, 18, logtime) != SQLITE_OK) {
-				output_message(MSG_ERROR, TSD_TEXT("sqlite3_bind_int64(): %s\n"), sqlite3_errmsg(dbh));
+				output_message(MSG_ERROR, TSD_TEXT("sqlite3_bind_int64(): %s"), sqlite3_errmsg(dbh));
 				goto END;
 			}
 		} else {
 			if (sqlite3_bind_null(stmt, 18) != SQLITE_OK) {
-				output_message(MSG_ERROR, TSD_TEXT("sqlite3_bind_null(): %s\n"), sqlite3_errmsg(dbh));
+				output_message(MSG_ERROR, TSD_TEXT("sqlite3_bind_null(): %s"), sqlite3_errmsg(dbh));
 				goto END;
 			}
 		}
 		if (sqlite3_bind_int64(stmt, 19, timenum14_now()) != SQLITE_OK) {
-			output_message(MSG_ERROR, TSD_TEXT("sqlite3_bind_int64(): %s\n"), sqlite3_errmsg(dbh));
+			output_message(MSG_ERROR, TSD_TEXT("sqlite3_bind_int64(): %s"), sqlite3_errmsg(dbh));
 			goto END;
 		}
 	}
 
 	if (replace && !logmode) {
 		if (sqlite3_bind_int64(stmt, 21, id) != SQLITE_OK) {
-			output_message(MSG_ERROR, TSD_TEXT("sqlite3_bind_int64(): %s\n"), sqlite3_errmsg(dbh));
+			output_message(MSG_ERROR, TSD_TEXT("sqlite3_bind_int64(): %s"), sqlite3_errmsg(dbh));
 			goto END;
 		}
 	}
 
 	if( sqlite3_step(stmt) != SQLITE_DONE ) {
-		output_message(MSG_ERROR, TSD_TEXT("sqlite3_step(): %s\n"), sqlite3_errmsg(dbh));
+		output_message(MSG_ERROR, TSD_TEXT("sqlite3_step(): %s"), sqlite3_errmsg(dbh));
 		goto END;
 	}
 
 	retval = 1;
 END:
 	if( sqlite3_finalize( stmt ) != SQLITE_OK ) {
-		output_message(MSG_ERROR, TSD_TEXT("sqlite3_finalize(): %s\n"), sqlite3_errmsg(dbh));
+		output_message(MSG_ERROR, TSD_TEXT("sqlite3_finalize(): %s"), sqlite3_errmsg(dbh));
 		retval = 0;
 	}
 	return retval;
@@ -475,42 +475,42 @@ static void register_to_db(mod_stat_t *pstat, const proginfo_t* pi, int logmode)
 
 	ret = sqlite3_open(db_fname, &dbh);
 	if (ret != SQLITE_OK) {
-		output_message(MSG_ERROR, TSD_TEXT(""SQLITE3_OPEN_FUNCNAME"(): %s\n"), sqlite3_errmsg(dbh));
-		output_message(MSG_ERROR, TSD_TEXT("sqliteデータベースのオープンに失敗しました\n"));
+		output_message(MSG_ERROR, TSD_TEXT(""SQLITE3_OPEN_FUNCNAME"(): %s"), sqlite3_errmsg(dbh));
+		output_message(MSG_ERROR, TSD_TEXT("sqliteデータベースのオープンに失敗しました"));
 		goto END2;
 	}
 	sqlite3_busy_timeout(dbh, 10 * 1000); /* 10s */
 	ret = sqlite3_exec(dbh, "PRAGMA synchronous=1;", NULL, NULL, NULL);
 	if (ret != SQLITE_OK) {
-		output_message(MSG_ERROR, TSD_TEXT("sqlite3_exec(): %s\n"), sqlite3_errmsg(dbh));
-		output_message(MSG_ERROR, TSD_TEXT("データベースを synchronous=1 に設定できませんでした\n"));
+		output_message(MSG_ERROR, TSD_TEXT("sqlite3_exec(): %s"), sqlite3_errmsg(dbh));
+		output_message(MSG_ERROR, TSD_TEXT("データベースを synchronous=1 に設定できませんでした"));
 		goto END2;
 	}
 	ret = sqlite3_exec(dbh, "BEGIN IMMEDIATE;", NULL, NULL, NULL); /* BEGIN DEFFERED; (デフォルト) ではだめ */
 	if (ret != SQLITE_OK) {
-		output_message(MSG_ERROR, TSD_TEXT("sqlite3_exec(): %s\n"), sqlite3_errmsg(dbh));
-		output_message(MSG_ERROR, TSD_TEXT("sqliteのトランザクション開始に失敗しました\n"));
+		output_message(MSG_ERROR, TSD_TEXT("sqlite3_exec(): %s"), sqlite3_errmsg(dbh));
+		output_message(MSG_ERROR, TSD_TEXT("sqliteのトランザクション開始に失敗しました"));
 		goto END2;
 	}
 
 	if(!logmode) {
 		ret = db_search(dbh, pi, &record_id, &actual_start);
 		if (ret == 0) {
-			output_message(MSG_ERROR, TSD_TEXT("sqliteデータベースの検索に失敗しました\n"));
+			output_message(MSG_ERROR, TSD_TEXT("sqliteデータベースの検索に失敗しました"));
 			goto END1;
 		} else if (ret == 1) {
 			/* 同じ番組の情報がまだデータベースに登録されていない */
 			ret = db_insert(dbh, pstat->fn_ts, pi, pstat->actual_start, pstat->actual_end, 0, 0, 0, 0);
 			if (!ret) {
-				output_message(MSG_ERROR, TSD_TEXT("sqliteデータベースの追加に失敗しました\n"));
+				output_message(MSG_ERROR, TSD_TEXT("sqliteデータベースの追加に失敗しました"));
 				goto END1;
 			}
 		} else {
 			/* 同じ番組の情報がデータベースに登録済み */
-			output_message(MSG_WARNING, TSD_TEXT("sqliteデータベースにすでに番組が登録済みなので上書きします\n"));
+			output_message(MSG_WARNING, TSD_TEXT("sqliteデータベースにすでに番組が登録済みなので上書きします"));
 			ret = db_insert(dbh, pstat->fn_ts, pi, actual_start, pstat->actual_end, 0, 1, 0, record_id);
 			if (!ret) {
-				output_message(MSG_ERROR, TSD_TEXT("sqliteデータベースの追加に失敗しました\n"));
+				output_message(MSG_ERROR, TSD_TEXT("sqliteデータベースの追加に失敗しました"));
 				goto END1;
 			}
 		}
@@ -522,15 +522,15 @@ static void register_to_db(mod_stat_t *pstat, const proginfo_t* pi, int logmode)
 		}
 		ret = db_insert(dbh, pstat->fn_ts, pi, 0, 0, logtime14, 0, 1, 0);
 		if (!ret) {
-			output_message(MSG_ERROR, TSD_TEXT("sqliteデータベースの追加に失敗しました\n"));
+			output_message(MSG_ERROR, TSD_TEXT("sqliteデータベースの追加に失敗しました"));
 			goto END1;
 		}
 	}
 
 	ret = sqlite3_exec(dbh, "COMMIT;", NULL, NULL, NULL);
 	if (ret != SQLITE_OK) {
-		output_message(MSG_ERROR, TSD_TEXT("sqlite3_exec(): %s\n"), sqlite3_errmsg(dbh));
-		output_message(MSG_ERROR, TSD_TEXT("sqliteのコミットに失敗しました\n"));
+		output_message(MSG_ERROR, TSD_TEXT("sqlite3_exec(): %s"), sqlite3_errmsg(dbh));
+		output_message(MSG_ERROR, TSD_TEXT("sqliteのコミットに失敗しました"));
 	} else {
 		commit_ok = 1;
 	}
@@ -538,18 +538,18 @@ END1:
 	if (!commit_ok) {
 		ret = sqlite3_exec(dbh, "ROLLBACK;", NULL, NULL, NULL);
 		if (ret != SQLITE_OK) {
-			output_message(MSG_ERROR, TSD_TEXT("sqlite3_exec(): %s\n"), sqlite3_errmsg(dbh));
-			output_message(MSG_ERROR, TSD_TEXT("sqliteのロールバックに失敗しました\n"));
+			output_message(MSG_ERROR, TSD_TEXT("sqlite3_exec(): %s"), sqlite3_errmsg(dbh));
+			output_message(MSG_ERROR, TSD_TEXT("sqliteのロールバックに失敗しました"));
 		} else {
-			output_message(MSG_WARNING, TSD_TEXT("データベースをロールバックしました\n"));
+			output_message(MSG_WARNING, TSD_TEXT("データベースをロールバックしました"));
 		}
 	}
 END2:
 	/* openに失敗してもcloseする */
 	ret = sqlite3_close(dbh);
 	if (ret != SQLITE_OK) {
-		output_message(MSG_ERROR, TSD_TEXT("sqlite3_close(): %s\n"), sqlite3_errmsg(dbh));
-		output_message(MSG_ERROR, TSD_TEXT("sqliteデータベースのクローズに失敗しました\n"));
+		output_message(MSG_ERROR, TSD_TEXT("sqlite3_close(): %s"), sqlite3_errmsg(dbh));
+		output_message(MSG_ERROR, TSD_TEXT("sqliteデータベースのクローズに失敗しました"));
 	}
 }
 
