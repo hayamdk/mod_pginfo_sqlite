@@ -83,12 +83,12 @@
     <ClCompile Include="mod_pginfo_sqlite.c" />
     <ClCompile Include="utils/tsdstr.c" />
     <ClCompile Include="utils/path.c" />
-    <ClCompile Include="utils\aribstr.c" />
-    <ClCompile Include="utils\ts_parser.c" />
+    <ClCompile Include="utils/aribstr.c" />
+    <ClCompile Include="utils/arib_parser.c" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="core/tsdump_def.h" />
-    <ClInclude Include="core/module_hooks.h" />
+    <ClInclude Include="core/module_api.h" />
     <ClInclude Include="utils/arib_proginfo.h" />
     <ClInclude Include="utils/tsdstr.h" />
     <ClInclude Include="utils/path.h" />

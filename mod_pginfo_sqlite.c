@@ -27,7 +27,7 @@
 #include <time.h>
 
 #include "utils/arib_proginfo.h"
-#include "core/module_hooks.h"
+#include "core/module_api.h"
 #include "utils/tsdstr.h"
 #include "utils/path.h"
 
@@ -94,12 +94,13 @@ static uint64_t timenum14(const time_mjd_t *time_mjd)
 	return tn;
 }
 
-static void *hook_pgoutput_create(const TSDCHAR *fname, const proginfo_t *pi, const ch_info_t *ch_info, const int actually_start)
+static void *hook_pgoutput_precreate(const TSDCHAR *fname, const proginfo_t *pi, const ch_info_t *ch_info, const int actually_start, int *n_outputs)
 {
 	UNREF_ARG(ch_info);
 	UNREF_ARG(pi);
 	mod_stat_t *pstat;
-
+	
+	*n_outputs = 0;
 	if ( !set_db_fname ) {
 		return NULL;
 	}
@@ -572,7 +573,7 @@ static void hook_pgoutput_end(void *ps, const proginfo_t* pi)
 	pstat->actual_end = timenum14_now();
 }
 
-static void hook_pgoutput_close(void *ps, const proginfo_t* pi)
+static void hook_pgoutput_postclose(void *ps, const proginfo_t* pi)
 {
 	mod_stat_t *pstat = (mod_stat_t*)ps;
 	if (!pstat) { 
@@ -584,10 +585,10 @@ static void hook_pgoutput_close(void *ps, const proginfo_t* pi)
 
 static void register_hooks()
 {
-	register_hook_pgoutput_create(hook_pgoutput_create);
+	register_hook_pgoutput_precreate(hook_pgoutput_precreate);
 	register_hook_pgoutput_changed(hook_pgoutput_changed);
 	register_hook_pgoutput_end(hook_pgoutput_end);
-	register_hook_pgoutput_close(hook_pgoutput_close);
+	register_hook_pgoutput_postclose(hook_pgoutput_postclose);
 }
 
 static const TSDCHAR *set_db(const TSDCHAR *param)

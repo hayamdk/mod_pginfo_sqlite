@@ -24,10 +24,10 @@
     <ClCompile Include="utils/path.c">
       <Filter>ソース ファイル</Filter>
     </ClCompile>
-    <ClCompile Include="utils\ts_parser.c">
+    <ClCompile Include="utils/arib_parser.c">
       <Filter>ソース ファイル</Filter>
     </ClCompile>
-    <ClCompile Include="utils\aribstr.c">
+    <ClCompile Include="utils/aribstr.c">
       <Filter>ソース ファイル</Filter>
     </ClCompile>
   </ItemGroup>
@@ -35,7 +35,7 @@
     <ClInclude Include="core/tsdump_def.h">
       <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
-    <ClInclude Include="core/module_hooks.h">
+    <ClInclude Include="core/module_api.h">
       <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
     <ClInclude Include="utils/arib_proginfo.h">

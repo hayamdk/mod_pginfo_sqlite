@@ -1,5 +1,5 @@
-#define VERSION_STR				TSD_TEXT("1.5.0-dev")
-#define DATE_STR				TSD_TEXT("2016/xx/xx")
+#define VERSION_STR				TSD_TEXT("1.5.4")
+#define DATE_STR				TSD_TEXT("2016/11/09")
 
 #define BUFSIZE_DEFAULT			96
 #define OVERLAP_SEC_DEFAULT		15
@@ -15,6 +15,8 @@ extern int CHECK_INTERVAL;
 extern int OVERLAP_SEC;
 extern int BUFSIZE;
 extern int MAX_PGOVERLAP;
+extern int MAX_OUTPUT_DELAY_SEC;
+extern int MAX_CLOSE_DELAY_SEC;
 
 static inline int64_t gettime()
 {
