@@ -1,5 +1,5 @@
-#define VERSION_STR				TSD_TEXT("1.5.4")
-#define DATE_STR				TSD_TEXT("2016/11/09")
+#define VERSION_STR				TSD_TEXT("1.6.0")
+#define DATE_STR				TSD_TEXT("2017/05/26")
 
 #define BUFSIZE_DEFAULT			96
 #define OVERLAP_SEC_DEFAULT		15
@@ -112,7 +112,5 @@ static inline int64_t timenumnow()
 	time_t t = time(NULL);
 	return timenumtt(t);
 }
-
-extern int param_nowait;
 
 void ghook_message(const TSDCHAR *modname, message_type_t msgtype, tsd_syserr_t *err, const TSDCHAR *msg);
